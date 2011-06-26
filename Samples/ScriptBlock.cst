@@ -1,0 +1,26 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="Text" Description="Demonstration of script blocks" %>
+<%-- 
+	Run with this command: 
+	
+		CodeGenerator /template:ScriptBlock.cst /debug+
+--%>
+
+This is some static content (like the static HTML in an ASP page).
+
+<%= TestStringMethod() %>
+
+2 + 2 is <%= TestIntMethod(2, 2).ToString() %>
+
+This is more static content.
+
+<script runat="template">
+public string TestStringMethod()
+{
+	return "Today's date: " + DateTime.Now.ToString("MM/dd/yyyy");
+}
+
+public int TestIntMethod(int a, int b)
+{
+	return a + b;
+}
+</script>

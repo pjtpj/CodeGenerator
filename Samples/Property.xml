@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<codeGenerator>
+
+	<defaultTemplate path="Property.cgt" />
+ 
+	<defaultProperties>
+		<property name="Name">TestPropertyName1</property>
+		<property name="Type">String</property>
+		<property name="ReadOnly">false</property>
+	</defaultProperties>
+
+	<propertySets>
+
+		<propertySet output="GeneratedCode\Property1.cs">
+			<property name="Name">TestPropertyName1</property>
+			<property name="Type">String</property>
+		</propertySet>
+ 
+		<propertySet output="GeneratedCode\Property2.cs">
+			<property name="Name">TestPropertyName2</property>
+			<property name="Type">Int</property>
+			<property name="ReadOnly">false</property>
+		</propertySet>
+
+		<propertySet>
+			<property name="Name">TestPropertyName3</property>
+			<property name="Type">Double</property>
+			<property name="ReadOnly">true</property>
+		</propertySet>
+
+	</propertySets>
+  
+</codeGenerator>

@@ -1,0 +1,337 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="C#" Src="Object.cst.cs" Inherits="ObjectTemplate" Description="Generate a business object from SQL table schema." %>
+<%@ Property Name="SourceTable" Type="DatabaseSchema.Table" Category="Context" Description="Table that the object is based on." %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="DatabaseSchema" %>
+<%@ Import Namespace="System.Data" %>
+<%-- 
+	Run with this command: 
+	
+		CodeGenerator /batch:Object.xml
+--%>
+using System;
+using System.Text;
+using System.Data;
+
+namespace Database
+{
+	/// <summary>
+	/// This object represents the properties and methods of a <%= GetClassName(SourceTable) %>.
+	/// </summary>
+	[Serializable]
+	public class <%= GetClassName(SourceTable) %>Base
+	{
+		<% foreach (Column column in SourceTable.Columns) { %>
+		<%= string.Format("protected {0} {1}{2};", GetCSharpType(column), GetMemberVariableName(column, false), GetMemberVariableDefaultValue(column)) %>
+		<% } %>
+
+		<% foreach (Column column in SourceTable.Columns) { %>
+		<%= string.Format("[NonSerialized] protected {0} {1}{2};", GetCSharpType(column), GetMemberVariableName(column, true), GetMemberVariableDefaultValue(column)) %>
+		<% } %>
+		
+		public <%= GetClassName(SourceTable) %>Base()
+		{
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			<%   if (SourceTable.PrimaryKey.MemberColumns[i].DataType == DbType.Guid) { %>
+			<%= GetMemberVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %> = Guid.NewGuid();
+			<%   } %>
+			<% } %>
+		}
+		
+		public <%= GetClassName(SourceTable) %>Base(<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %><%= GetCSharpType(SourceTable.PrimaryKey.MemberColumns[i]) %> <%= GetLocalVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %>, <% } %><% } %>)
+		{
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			<%= GetMemberVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %> = <%= GetLocalVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %>;
+			<% } %>
+			Refresh();
+		}
+		
+		public <%= GetClassName(SourceTable) %>Base(IDataReader reader)
+		{
+			this.LoadFromReader(reader);
+		}
+		
+		static public bool Exists(<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %><%= GetCSharpType(SourceTable.PrimaryKey.MemberColumns[i]) %> <%= GetLocalVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %>, <% } %><% } %>)
+		{
+			string commandText = @"
+				SELECT
+					COUNT(*)
+				FROM
+					<%= SourceTable.Name %>
+				WHERE
+					<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+					<%= SourceTable.PrimaryKey.MemberColumns[i].Name %> = @<%= SourceTable.PrimaryKey.MemberColumns[i].Name %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %> AND <% } %>
+					<% } %>
+				";
+				
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand(commandText);
+				
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.PrimaryKey.MemberColumns[i].Name %>", <%= GetDbType(SourceTable.PrimaryKey.MemberColumns[i]) %>, <%= GetLocalVariableName(SourceTable.PrimaryKey.MemberColumns[i]) %>);
+			<% } %>
+			
+			long count = (long)command.ExecuteScalar();
+			command.Parameters.Clear();
+			
+			return count > 0;
+		}
+		
+		public virtual void Insert()
+		{
+			string commandText = @"
+			<% if (HasIdentity(SourceTable)) { %>
+				INSERT INTO <%= SourceTable.Name %> (
+					<% for (int i = 0; i < SourceTable.NonPrimaryKeyColumns.Count; i++) { %>
+					<%= SourceTable.NonPrimaryKeyColumns[i].Name %><% if (i < SourceTable.NonPrimaryKeyColumns.Count - 1) { %>,<% } %>
+					<% } %>
+				) VALUES (
+					<% for (int i = 0; i < SourceTable.NonPrimaryKeyColumns.Count; i++) { %>
+					@<%= SourceTable.NonPrimaryKeyColumns[i].Name %><% if (i < SourceTable.NonPrimaryKeyColumns.Count - 1) { %>,<% } %>
+					<% } %>
+				)";
+			<% } else { %>
+				INSERT INTO <%= SourceTable.Name %> (
+					<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+					<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+					<% } %>
+				) VALUES (
+					<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+					@<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+					<% } %>
+				)";
+			<% } %>
+				
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand(commandText);
+				
+			<% if (HasIdentity(SourceTable)) { %>
+			<% for (int i = 0; i < SourceTable.NonPrimaryKeyColumns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.NonPrimaryKeyColumns[i].Name %>", <%= GetDbType(SourceTable.NonPrimaryKeyColumns[i]) %>, <%= GetMemberParameterName(SourceTable.NonPrimaryKeyColumns[i]) %>);
+			<% } %>
+			<% } else { %>
+			<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.Columns[i].Name %>", <%= GetDbType(SourceTable.Columns[i]) %>, <%= GetMemberParameterName(SourceTable.Columns[i]) %>);
+			<% } %>
+			<% } %>
+			
+			if(command.ExecuteNonQuery() != 1)
+			{
+				string error = String.Format("Invalid State: Inserted more than one {0} with ID {1}.",
+				                             "<%= SourceTable.Name %>", <%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %>);
+				throw new ApplicationException(error);
+			}
+			command.Parameters.Clear();
+			
+			<% if (HasIdentity(SourceTable)) { %>
+			switch(DbRequest.DatabaseType)
+			{
+				case DbRequest.DatabaseTypes.MySql:
+				{
+					command.CommandText = "SELECT LAST_INSERT_ID()";
+					long idDb = (long)command.ExecuteScalar();
+					<%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %> = (int)idDb;
+					break;
+				}
+				case DbRequest.DatabaseTypes.MSSql:
+				{
+					command.CommandText = "SELECT @@IDENTITY";
+					decimal idDb = (decimal)command.ExecuteScalar();
+					<%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %> = decimal.ToInt32(idDb);
+					break;
+				}
+				default:
+					throw new ApplicationException("Invalid State: Unknown Database Type");
+			}
+			
+			<% } %>
+		}
+		
+		<% if (HasIdentity(SourceTable)) { %>
+		public virtual void InsertWithIdentity()
+		{
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand("");
+			
+			if(DbRequest.DatabaseType == DbRequest.DatabaseTypes.MSSql)
+			{
+				command.CommandText = "SET IDENTITY_INSERT <%= SourceTable.Name %> ON";
+				command.ExecuteNonQuery();
+			}
+			
+			command.CommandText = @"
+				INSERT INTO <%= SourceTable.Name %> (
+					<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+					<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+					<% } %>
+				) VALUES (
+					<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+					@<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+					<% } %>
+				)";
+				
+			<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.Columns[i].Name %>", <%= GetDbType(SourceTable.Columns[i]) %>, <%= GetMemberParameterName(SourceTable.Columns[i]) %>);
+			<% } %>
+			
+			if(command.ExecuteNonQuery() != 1)
+			{
+				string error = String.Format("Invalid State: Inserted more than one {0} with ID {1}.",
+				                             "<%= SourceTable.Name %>", <%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %>);
+				throw new ApplicationException(error);
+			}
+			command.Parameters.Clear();
+			
+			if(DbRequest.DatabaseType == DbRequest.DatabaseTypes.MSSql)
+			{
+				command.CommandText = "SET IDENTITY_INSERT <%= SourceTable.Name %> OFF";
+				command.ExecuteNonQuery();
+			}
+		}
+		<% } %>
+
+		public virtual void Update()
+		{
+			StringBuilder updateData = new StringBuilder();
+			
+			<% for (int i = 0; i < SourceTable.NonPrimaryKeyColumns.Count; i++) { %>
+			if(<%= GetMemberVariableName(SourceTable.NonPrimaryKeyColumns[i], false) %> != <%= GetMemberVariableName(SourceTable.NonPrimaryKeyColumns[i], true) %>)
+				DbRequest.AppendUpdateFieldSQL(ref updateData, "<%= SourceTable.NonPrimaryKeyColumns[i].Name %>");
+			<% } %>
+			
+			if(updateData.Length <= 0)
+				return;
+			
+			string commandText = string.Format("UPDATE <%= SourceTable.Name %> SET {0} WHERE <% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %><%= SourceTable.PrimaryKey.MemberColumns[i].Name %> = @<%= SourceTable.PrimaryKey.MemberColumns[i].Name %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %> AND <% } %><% } %>", 
+				updateData.ToString());
+				
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand(commandText);
+			
+			<% for (int i = 0; i < SourceTable.NonPrimaryKeyColumns.Count; i++) { %>
+			if(<%= GetMemberVariableName(SourceTable.NonPrimaryKeyColumns[i], false) %> != <%= GetMemberVariableName(SourceTable.NonPrimaryKeyColumns[i], true) %>)
+			{
+				DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.NonPrimaryKeyColumns[i].Name %>", <%= GetDbType(SourceTable.NonPrimaryKeyColumns[i]) %>, <%= GetMemberParameterName(SourceTable.NonPrimaryKeyColumns[i]) %>);
+			}
+			<% } %>
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.PrimaryKey.MemberColumns[i].Name %>", <%= GetDbType(SourceTable.PrimaryKey.MemberColumns[i]) %>, <%= GetMemberParameterName(SourceTable.PrimaryKey.MemberColumns[i]) %>);
+			<% } %>
+			
+			if(command.ExecuteNonQuery() != 1)
+			{
+				string error = String.Format("Invalid State: Updated more than one {0} with ID {1}.",
+				                             "<%= SourceTable.Name %>", <%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %>);
+				throw new ApplicationException(error);
+			}
+			command.Parameters.Clear();
+			
+			SetOriginalValues();
+		}
+		
+		public virtual void Delete()
+		{
+			string commandText = @"
+				DELETE FROM
+					<%= SourceTable.Name %>
+				WHERE
+					<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+					<%= SourceTable.PrimaryKey.MemberColumns[i].Name %> = @<%= SourceTable.PrimaryKey.MemberColumns[i].Name %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %> AND <% } %>
+					<% } %>
+				";
+			
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand(commandText);
+				
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.PrimaryKey.MemberColumns[i].Name %>", <%= GetDbType(SourceTable.PrimaryKey.MemberColumns[i]) %>, <%= GetMemberParameterName(SourceTable.PrimaryKey.MemberColumns[i]) %>);
+			<% } %>
+			
+			if(command.ExecuteNonQuery() != 1)
+			{
+				string error = String.Format("Invalid State: Deleted more than one {0} with ID {1}.",
+				                             "<%= SourceTable.Name %>", <%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %>);
+				throw new ApplicationException(error);
+			}
+			command.Parameters.Clear();
+		}
+		
+		public virtual void Refresh()
+		{
+			string commandText = @"
+				SELECT
+					<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+					<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+					<% } %>
+				FROM
+					<%= SourceTable.Name %>
+				WHERE
+					<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+					<%= SourceTable.PrimaryKey.MemberColumns[i].Name %> = @<%= SourceTable.PrimaryKey.MemberColumns[i].Name %><% if (i < SourceTable.PrimaryKey.MemberColumns.Count - 1) { %> AND <% } %>
+					<% } %>
+				";
+				
+			IDbCommand command = DbRequest.Singleton.GetObjectCommand(commandText);
+				
+			<% for (int i = 0; i < SourceTable.PrimaryKey.MemberColumns.Count; i++) { %>
+			DbRequest.Singleton.AddParameter(command, "@<%= SourceTable.PrimaryKey.MemberColumns[i].Name %>", <%= GetDbType(SourceTable.PrimaryKey.MemberColumns[i]) %>, <%= GetMemberParameterName(SourceTable.PrimaryKey.MemberColumns[i]) %>);
+			<% } %>
+
+			using(IDataReader reader = command.ExecuteReader(CommandBehavior.SingleResult | CommandBehavior.SingleRow))
+			{
+				if (reader.Read()) 
+				{
+					this.LoadFromReader(reader);
+				}
+				else
+				{
+					string error = String.Format("Invalid State: Failed to read {0} with ID {1}.",
+												"<%= SourceTable.Name %>", <%= GetPropertyName(SourceTable.PrimaryKey.MemberColumns[0]) %>);
+					throw new ApplicationException(error);
+				}
+				reader.Close();
+				command.Parameters.Clear();
+			}
+		}
+		
+		public static string GetSelectColumns()
+		{
+			string columns = @"
+				<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+				<%= SourceTable.Name %>.<%= SourceTable.Columns[i].Name %><% if (i < SourceTable.Columns.Count - 1) { %>,<% } %>
+				<% } %>
+				";
+			return columns;
+		}
+		
+		protected void LoadFromReader(IDataReader reader)
+		{
+			if (reader != null && !reader.IsClosed)
+			{
+				<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+				<%   if (IsColumnBinary(SourceTable.Columns[i]) ) { %>
+				<%= string.Format("long {0}Count = reader.GetBytes({1}, 0, null, 0, 0);", GetMemberVariableName(SourceTable.Columns[i]),  i) %>
+				<%= string.Format("byte[] {0}Bytes = new byte[{0}Count];", GetMemberVariableName(SourceTable.Columns[i])) %>
+				<%= string.Format("reader.GetBytes({1}, 0, {0}Bytes, 0, (int){0}Count);", GetMemberVariableName(SourceTable.Columns[i]),  i) %>
+				<%   } %>
+				<%   else { %>
+				<%= string.Format("{0} = reader.{1}({2});", GetMemberVariableName(SourceTable.Columns[i]), GetReaderMethod(SourceTable.Columns[i]), i) %>
+				<%   } %>
+				<% } %>
+				
+				SetOriginalValues();
+			}
+		}
+		
+		protected void SetOriginalValues()
+		{
+			<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+			<%= GetMemberVariableName(SourceTable.Columns[i], true) %> = <%= GetMemberVariableName(SourceTable.Columns[i], false) %>;
+			<% } %>
+		}
+		
+		#region Public Properties
+		<% for (int i = 0; i < SourceTable.Columns.Count; i++) { %>
+		public <%= GetCSharpType(SourceTable.Columns[i]) %> <%= GetPropertyName(SourceTable.Columns[i]) %>
+		{
+			get {return <%= GetMemberVariableName(SourceTable.Columns[i]) %>;}
+			set {<%= GetMemberVariableName(SourceTable.Columns[i]) %> = value;}
+		}
+		<% } %>
+		#endregion
+	}
+}

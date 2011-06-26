@@ -1,0 +1,14 @@
+<%@ CodeTemplate Src="CodeBehind.cst.cs" Inherits="CodeBehindClass" Language="C#" TargetLanguage="Text" Description="Demonstration of CodeBehind" %>
+<%-- 
+	Run with this command: 
+	
+		CodeGenerator /template:CodeBehind.cst /debug+ 
+--%>
+
+This is some static content (like the static HTML in an ASP page).
+
+<%= TestStringMethod() %>
+
+2 + 2 is <%= TestIntMethod(2, 2).ToString() %>
+
+This is more static content.

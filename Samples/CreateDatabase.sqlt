@@ -1,0 +1,468 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="C#" Description="Demonstrates generation of a dbms specific database creation script." %>
+<%@ Property Name="DatabaseType" Type="DatabaseTypes" Category="Options" Description="Use MSSql or MySql." %>
+<%-- 
+	Run with this command: 
+	
+		CodeGenerator /batch:CreateDatabase.xml
+--%>
+
+-- This is a sample script to create a new, empty database
+
+<% if (DatabaseType == DatabaseTypes.MSSql) { %>
+-- Run with: OSQL.EXE -E -S MYSERVER\VSDOTNET -i CreateDatabase-MSSql.sql
+<% } %>
+<% if (DatabaseType == DatabaseTypes.MySql) { %>
+-- Run with: mysql.exe -u root -p < CreateDatabase-MySql.sql
+<% } %>
+
+<% if (DatabaseType == DatabaseTypes.MSSql) { %>
+IF EXISTS (SELECT name FROM master.dbo.sysdatabases WHERE name = N'mytestdb')
+	DROP DATABASE [mytestdb]
+GO
+
+CREATE DATABASE [mytestdb] ON (NAME = N'mytestdb', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL$VSDOTNET\Data\mytestdb.mdf', SIZE = 2, FILEGROWTH = 10%) LOG ON (NAME = N'mytestdb_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL$VSDOTNET\Data\mytestdb_log.LDF', FILEGROWTH = 10%)
+ COLLATE SQL_Latin1_General_CP1_CI_AS
+GO
+
+exec sp_dboption N'mytestdb', N'autoclose', N'true'
+GO
+
+exec sp_dboption N'mytestdb', N'bulkcopy', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'trunc. log', N'true'
+GO
+
+exec sp_dboption N'mytestdb', N'torn page detection', N'true'
+GO
+
+exec sp_dboption N'mytestdb', N'read only', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'dbo use', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'single', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'autoshrink', N'true'
+GO
+
+exec sp_dboption N'mytestdb', N'ANSI null default', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'recursive triggers', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'ANSI nulls', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'concat null yields null', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'cursor close on commit', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'default to local cursor', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'quoted identifier', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'ANSI warnings', N'false'
+GO
+
+exec sp_dboption N'mytestdb', N'auto create statistics', N'true'
+GO
+
+exec sp_dboption N'mytestdb', N'auto update statistics', N'true'
+GO
+
+if( ( (@@microsoftversion / power(2, 24) = 8) and (@@microsoftversion & 0xffff >= 724) ) or ( (@@microsoftversion / power(2, 24) = 7) and (@@microsoftversion & 0xffff >= 1082) ) )
+	exec sp_dboption N'mytestdb', N'db chaining', N'false'
+GO
+
+use mytestdb
+GO
+
+if not exists (select * from master.dbo.syslogins where loginname = 'mytestdb')
+	-- exec sp_grantlogin 'MYSERVER\ASPNET'
+	-- exec sp_defaultdb 'MYSERVER\ASPNET', N'master'
+	-- exec sp_defaultlanguage 'MYSERVER\ASPNET', N'us_english'
+	exec sp_addlogin 'mytestdb', 'mypassword', 'mytestdb', 'us_english'
+GO
+
+<% } %>
+<% if (DatabaseType == DatabaseTypes.MySql) { %>
+DROP DATABASE IF EXISTS mytestdb;
+CREATE DATABASE mytestdb;
+USE mytestdb;
+<% } %>
+
+-- Users ----------------------------------------------------------------------
+
+CREATE TABLE Users 
+(
+	Username                VARCHAR(40) NOT NULL,
+	                        CONSTRAINT Users_PK PRIMARY KEY CLUSTERED (Username),
+	Password                VARCHAR(40) NOT NULL,
+	IsActive                BIT NOT NULL,
+	FirstName               VARCHAR(40) NOT NULL,
+	LastName                VARCHAR(40) NOT NULL,
+	CompanyName             VARCHAR(40) NOT NULL,
+	Email                   VARCHAR(120) NOT NULL,
+	WorkPhone               VARCHAR(25) NOT NULL,
+	HomePhone               VARCHAR(25) NOT NULL,
+	CellPhone               VARCHAR(25) NOT NULL,
+	MailAddress1            VARCHAR(60) NOT NULL,
+	MailAddress2            VARCHAR(60) NOT NULL,
+	MailCity                VARCHAR(40) NOT NULL,
+	MailState               VARCHAR(20) NOT NULL,
+	MailZip                 VARCHAR(20) NOT NULL,
+	MailCountry             VARCHAR(40) NOT NULL,
+	TimeZone                VARCHAR(120) NOT NULL
+)
+<%= EOS() %>
+
+-- Articles -------------------------------------------------------------------
+
+CREATE TABLE ArticleTypes 
+(
+	ArticleType VARCHAR(50) NOT NULL,
+	            CONSTRAINT ArticleTypes_PK PRIMARY KEY CLUSTERED (ArticleType) 
+)
+<%= EOS() %>
+
+INSERT INTO ArticleTypes VALUES ('Sales') <%= EOS() %>
+INSERT INTO ArticleTypes VALUES ('Support') <%= EOS() %>
+INSERT INTO ArticleTypes VALUES ('Company') <%= EOS() %>
+
+CREATE TABLE Articles 
+(
+	ArticleID   INT <%= GetIdentity(1) %> NOT NULL,
+	            CONSTRAINT Articles_PK PRIMARY KEY CLUSTERED (ArticleID),
+	IsActive    BIT NOT NULL,
+	ArticleName VARCHAR(40) NOT NULL,
+	ArticleType VARCHAR(50) NOT NULL,
+	            CONSTRAINT Articles_F_ArticleType FOREIGN KEY (ArticleType) REFERENCES ArticleTypes (ArticleType) ON UPDATE CASCADE,
+	Title       text NOT NULL,
+	Synopsis    text NOT NULL,
+	Body        text NOT NULL
+)
+<%= EOS() %>
+
+-- Countries ------------------------------------------------------------------
+
+CREATE TABLE Countries
+(
+	TwoLetterCode VARCHAR(2) NOT NULL,
+	              CONSTRAINT Countries_PK PRIMARY KEY CLUSTERED (TwoLetterCode),
+	CountryName   VARCHAR(40) NOT NULL
+)
+<%= EOS() %>
+
+INSERT INTO Countries VALUES ('US','United States') <%= EOS() %>
+INSERT INTO Countries VALUES ('AF','Afghanistan') <%= EOS() %>
+INSERT INTO Countries VALUES ('AL','Albania') <%= EOS() %>
+INSERT INTO Countries VALUES ('DZ','Algeria') <%= EOS() %>
+INSERT INTO Countries VALUES ('AS','American Samoa') <%= EOS() %>
+INSERT INTO Countries VALUES ('AD','Andorra') <%= EOS() %>
+INSERT INTO Countries VALUES ('AO','Angola') <%= EOS() %>
+INSERT INTO Countries VALUES ('AI','Anguilla') <%= EOS() %>
+INSERT INTO Countries VALUES ('AQ','Antarctica') <%= EOS() %>
+INSERT INTO Countries VALUES ('AG','Antigua and Barbuda') <%= EOS() %>
+INSERT INTO Countries VALUES ('AR','Argentina') <%= EOS() %>
+INSERT INTO Countries VALUES ('AM','Armenia') <%= EOS() %>
+INSERT INTO Countries VALUES ('AW','Aruba') <%= EOS() %>
+INSERT INTO Countries VALUES ('AU','Australia') <%= EOS() %>
+INSERT INTO Countries VALUES ('AT','Austria') <%= EOS() %>
+INSERT INTO Countries VALUES ('AZ','Azerbaijan') <%= EOS() %>
+INSERT INTO Countries VALUES ('BS','Bahamas') <%= EOS() %>
+INSERT INTO Countries VALUES ('BH','Bahrain') <%= EOS() %>
+INSERT INTO Countries VALUES ('BD','Bangladesh') <%= EOS() %>
+INSERT INTO Countries VALUES ('BB','Barbados') <%= EOS() %>
+INSERT INTO Countries VALUES ('BY','Belarus') <%= EOS() %>
+INSERT INTO Countries VALUES ('BE','Belgium') <%= EOS() %>
+INSERT INTO Countries VALUES ('BZ','Belize') <%= EOS() %>
+INSERT INTO Countries VALUES ('BJ','Benin') <%= EOS() %>
+INSERT INTO Countries VALUES ('BM','Bermuda') <%= EOS() %>
+INSERT INTO Countries VALUES ('BT','Bhutan') <%= EOS() %>
+INSERT INTO Countries VALUES ('BO','Bolivia') <%= EOS() %>
+INSERT INTO Countries VALUES ('BA','Bosnia and Herzegowina') <%= EOS() %>
+INSERT INTO Countries VALUES ('BW','Botswana') <%= EOS() %>
+INSERT INTO Countries VALUES ('BV','Bouvet Island') <%= EOS() %>
+INSERT INTO Countries VALUES ('BR','Brazil') <%= EOS() %>
+INSERT INTO Countries VALUES ('IO','British Indian Ocean Territory') <%= EOS() %>
+INSERT INTO Countries VALUES ('BN','Brunei Darussalam') <%= EOS() %>
+INSERT INTO Countries VALUES ('BG','Bulgaria') <%= EOS() %>
+INSERT INTO Countries VALUES ('BF','Burkina Faso') <%= EOS() %>
+INSERT INTO Countries VALUES ('BI','Burundi') <%= EOS() %>
+INSERT INTO Countries VALUES ('KH','Cambodia') <%= EOS() %>
+INSERT INTO Countries VALUES ('CM','Cameroon') <%= EOS() %>
+INSERT INTO Countries VALUES ('CA','Canada') <%= EOS() %>
+INSERT INTO Countries VALUES ('CV','Cape Verde') <%= EOS() %>
+INSERT INTO Countries VALUES ('KY','Cayman Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('CF','Central African Republic') <%= EOS() %>
+INSERT INTO Countries VALUES ('TD','Chad') <%= EOS() %>
+INSERT INTO Countries VALUES ('CL','Chile') <%= EOS() %>
+INSERT INTO Countries VALUES ('CN','China') <%= EOS() %>
+INSERT INTO Countries VALUES ('CX','Christmas Island') <%= EOS() %>
+INSERT INTO Countries VALUES ('CC','Cocos (Keeling) Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('CO','Colombia') <%= EOS() %>
+INSERT INTO Countries VALUES ('KM','Comoros') <%= EOS() %>
+INSERT INTO Countries VALUES ('CG','Congo') <%= EOS() %>
+INSERT INTO Countries VALUES ('CK','Cook Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('CR','Costa Rica') <%= EOS() %>
+INSERT INTO Countries VALUES ('CI','Cote D''Ivoire') <%= EOS() %>
+INSERT INTO Countries VALUES ('HR','Croatia (local name: Hrvatska)') <%= EOS() %>
+INSERT INTO Countries VALUES ('CU','Cuba') <%= EOS() %>
+INSERT INTO Countries VALUES ('CY','Cyprus') <%= EOS() %>
+INSERT INTO Countries VALUES ('CZ','Czech Republic') <%= EOS() %>
+INSERT INTO Countries VALUES ('DK','Denmark') <%= EOS() %>
+INSERT INTO Countries VALUES ('DJ','Djibouti') <%= EOS() %>
+INSERT INTO Countries VALUES ('DM','Dominica') <%= EOS() %>
+INSERT INTO Countries VALUES ('DO','Dominican Republic') <%= EOS() %>
+INSERT INTO Countries VALUES ('TP','East Timor') <%= EOS() %>
+INSERT INTO Countries VALUES ('EC','Ecuador') <%= EOS() %>
+INSERT INTO Countries VALUES ('EG','Egypt') <%= EOS() %>
+INSERT INTO Countries VALUES ('SV','El Salvador') <%= EOS() %>
+INSERT INTO Countries VALUES ('GQ','Equatorial Guinea') <%= EOS() %>
+INSERT INTO Countries VALUES ('ER','Eritrea') <%= EOS() %>
+INSERT INTO Countries VALUES ('EE','Estonia') <%= EOS() %>
+INSERT INTO Countries VALUES ('ET','Ethiopia') <%= EOS() %>
+INSERT INTO Countries VALUES ('FK','Falkland Islands (Malvinas)') <%= EOS() %>
+INSERT INTO Countries VALUES ('FO','Faroe Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('FJ','Fiji') <%= EOS() %>
+INSERT INTO Countries VALUES ('FI','Finland') <%= EOS() %>
+INSERT INTO Countries VALUES ('FR','France') <%= EOS() %>
+INSERT INTO Countries VALUES ('FX','France, Metropolitan') <%= EOS() %>
+INSERT INTO Countries VALUES ('GF','French Guiana') <%= EOS() %>
+INSERT INTO Countries VALUES ('PF','French Polynesia') <%= EOS() %>
+INSERT INTO Countries VALUES ('TF','French Southern Territories') <%= EOS() %>
+INSERT INTO Countries VALUES ('GA','Gabon') <%= EOS() %>
+INSERT INTO Countries VALUES ('GM','Gambia') <%= EOS() %>
+INSERT INTO Countries VALUES ('GE','Georgia') <%= EOS() %>
+INSERT INTO Countries VALUES ('DE','Germany') <%= EOS() %>
+INSERT INTO Countries VALUES ('GH','Ghana') <%= EOS() %>
+INSERT INTO Countries VALUES ('GI','Gibraltar') <%= EOS() %>
+INSERT INTO Countries VALUES ('GR','Greece') <%= EOS() %>
+INSERT INTO Countries VALUES ('GL','Greenland') <%= EOS() %>
+INSERT INTO Countries VALUES ('GD','Grenada') <%= EOS() %>
+INSERT INTO Countries VALUES ('GP','Guadeloupe') <%= EOS() %>
+INSERT INTO Countries VALUES ('GU','Guam') <%= EOS() %>
+INSERT INTO Countries VALUES ('GT','Guatemala') <%= EOS() %>
+INSERT INTO Countries VALUES ('GN','Guinea') <%= EOS() %>
+INSERT INTO Countries VALUES ('GW','Guinea-Bissau') <%= EOS() %>
+INSERT INTO Countries VALUES ('GY','Guyana') <%= EOS() %>
+INSERT INTO Countries VALUES ('HT','Haiti') <%= EOS() %>
+INSERT INTO Countries VALUES ('HM','Heard and Mc Donald Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('HN','Honduras') <%= EOS() %>
+INSERT INTO Countries VALUES ('HK','Hong Kong') <%= EOS() %>
+INSERT INTO Countries VALUES ('HU','Hungary') <%= EOS() %>
+INSERT INTO Countries VALUES ('IS','Iceland') <%= EOS() %>
+INSERT INTO Countries VALUES ('IN','India') <%= EOS() %>
+INSERT INTO Countries VALUES ('ID','Indonesia') <%= EOS() %>
+INSERT INTO Countries VALUES ('IR','Iran (Islamic Republic of)') <%= EOS() %>
+INSERT INTO Countries VALUES ('IQ','Iraq') <%= EOS() %>
+INSERT INTO Countries VALUES ('IE','Ireland') <%= EOS() %>
+INSERT INTO Countries VALUES ('IL','Israel') <%= EOS() %>
+INSERT INTO Countries VALUES ('IT','Italy') <%= EOS() %>
+INSERT INTO Countries VALUES ('JM','Jamaica') <%= EOS() %>
+INSERT INTO Countries VALUES ('JP','Japan') <%= EOS() %>
+INSERT INTO Countries VALUES ('JO','Jordan') <%= EOS() %>
+INSERT INTO Countries VALUES ('KZ','Kazakhstan') <%= EOS() %>
+INSERT INTO Countries VALUES ('KE','Kenya') <%= EOS() %>
+INSERT INTO Countries VALUES ('KI','Kiribati') <%= EOS() %>
+INSERT INTO Countries VALUES ('KP','Korea (North)') <%= EOS() %>
+INSERT INTO Countries VALUES ('KR','Korea (South)') <%= EOS() %>
+INSERT INTO Countries VALUES ('KW','Kuwait') <%= EOS() %>
+INSERT INTO Countries VALUES ('KG','Kyrgyzstan') <%= EOS() %>
+INSERT INTO Countries VALUES ('LA','Lao People''s Democratic Republic') <%= EOS() %>
+INSERT INTO Countries VALUES ('LV','Latvia') <%= EOS() %>
+INSERT INTO Countries VALUES ('LB','Lebanon') <%= EOS() %>
+INSERT INTO Countries VALUES ('LS','Lesotho') <%= EOS() %>
+INSERT INTO Countries VALUES ('LR','Liberia') <%= EOS() %>
+INSERT INTO Countries VALUES ('LY','Libyan Arab Jamahiriya') <%= EOS() %>
+INSERT INTO Countries VALUES ('LI','Liechtenstein') <%= EOS() %>
+INSERT INTO Countries VALUES ('LT','Lithuania') <%= EOS() %>
+INSERT INTO Countries VALUES ('LU','Luxembourg') <%= EOS() %>
+INSERT INTO Countries VALUES ('MO','Macau') <%= EOS() %>
+INSERT INTO Countries VALUES ('MK','Macedonia') <%= EOS() %>
+INSERT INTO Countries VALUES ('MG','Madagascar') <%= EOS() %>
+INSERT INTO Countries VALUES ('MW','Malawi') <%= EOS() %>
+INSERT INTO Countries VALUES ('MY','Malaysia') <%= EOS() %>
+INSERT INTO Countries VALUES ('MV','Maldives') <%= EOS() %>
+INSERT INTO Countries VALUES ('ML','Mali') <%= EOS() %>
+INSERT INTO Countries VALUES ('MT','Malta') <%= EOS() %>
+INSERT INTO Countries VALUES ('MH','Marshall Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('MQ','Martinique') <%= EOS() %>
+INSERT INTO Countries VALUES ('MR','Mauritania') <%= EOS() %>
+INSERT INTO Countries VALUES ('MU','Mauritius') <%= EOS() %>
+INSERT INTO Countries VALUES ('YT','Mayotte') <%= EOS() %>
+INSERT INTO Countries VALUES ('MX','Mexico') <%= EOS() %>
+INSERT INTO Countries VALUES ('FM','Micronesia') <%= EOS() %>
+INSERT INTO Countries VALUES ('MD','Moldova') <%= EOS() %>
+INSERT INTO Countries VALUES ('MC','Monaco') <%= EOS() %>
+INSERT INTO Countries VALUES ('MN','Mongolia') <%= EOS() %>
+INSERT INTO Countries VALUES ('MS','Montserrat') <%= EOS() %>
+INSERT INTO Countries VALUES ('MA','Morocco') <%= EOS() %>
+INSERT INTO Countries VALUES ('MZ','Mozambique') <%= EOS() %>
+INSERT INTO Countries VALUES ('MM','Myanmar') <%= EOS() %>
+INSERT INTO Countries VALUES ('NA','Namibia') <%= EOS() %>
+INSERT INTO Countries VALUES ('NR','Nauru') <%= EOS() %>
+INSERT INTO Countries VALUES ('NP','Nepal') <%= EOS() %>
+INSERT INTO Countries VALUES ('NL','Netherlands') <%= EOS() %>
+INSERT INTO Countries VALUES ('AN','Netherlands Antilles') <%= EOS() %>
+INSERT INTO Countries VALUES ('NC','New Caledonia') <%= EOS() %>
+INSERT INTO Countries VALUES ('NZ','New Zealand') <%= EOS() %>
+INSERT INTO Countries VALUES ('NI','Nicaragua') <%= EOS() %>
+INSERT INTO Countries VALUES ('NE','Niger') <%= EOS() %>
+INSERT INTO Countries VALUES ('NG','Nigeria') <%= EOS() %>
+INSERT INTO Countries VALUES ('NU','Niue') <%= EOS() %>
+INSERT INTO Countries VALUES ('NF','Norfolk Island') <%= EOS() %>
+INSERT INTO Countries VALUES ('MP','Northern Mariana Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('NO','Norway') <%= EOS() %>
+INSERT INTO Countries VALUES ('OM','Oman') <%= EOS() %>
+INSERT INTO Countries VALUES ('PK','Pakistan') <%= EOS() %>
+INSERT INTO Countries VALUES ('PW','Palau') <%= EOS() %>
+INSERT INTO Countries VALUES ('PA','Panama') <%= EOS() %>
+INSERT INTO Countries VALUES ('PG','Papua New Guinea') <%= EOS() %>
+INSERT INTO Countries VALUES ('PY','Paraguay') <%= EOS() %>
+INSERT INTO Countries VALUES ('PE','Peru') <%= EOS() %>
+INSERT INTO Countries VALUES ('PH','Philippines') <%= EOS() %>
+INSERT INTO Countries VALUES ('PN','Pitcairn') <%= EOS() %>
+INSERT INTO Countries VALUES ('PL','Poland') <%= EOS() %>
+INSERT INTO Countries VALUES ('PT','Portugal') <%= EOS() %>
+INSERT INTO Countries VALUES ('PR','Puerto Rico') <%= EOS() %>
+INSERT INTO Countries VALUES ('QA','Qatar') <%= EOS() %>
+INSERT INTO Countries VALUES ('RE','Reunion') <%= EOS() %>
+INSERT INTO Countries VALUES ('RO','Romania') <%= EOS() %>
+INSERT INTO Countries VALUES ('RU','Russian Federation') <%= EOS() %>
+INSERT INTO Countries VALUES ('RW','Rwanda') <%= EOS() %>
+INSERT INTO Countries VALUES ('KN','Saint Kitts and Nevis') <%= EOS() %>
+INSERT INTO Countries VALUES ('LC','Saint Lucia') <%= EOS() %>
+INSERT INTO Countries VALUES ('VC','Saint Vincent and the Grenadines') <%= EOS() %>
+INSERT INTO Countries VALUES ('WS','Samoa') <%= EOS() %>
+INSERT INTO Countries VALUES ('SM','San Marino') <%= EOS() %>
+INSERT INTO Countries VALUES ('ST','Sao Tome and Principe') <%= EOS() %>
+INSERT INTO Countries VALUES ('SA','Saudi Arabia') <%= EOS() %>
+INSERT INTO Countries VALUES ('SN','Senegal') <%= EOS() %>
+INSERT INTO Countries VALUES ('SC','Seychelles') <%= EOS() %>
+INSERT INTO Countries VALUES ('SL','Sierra Leone') <%= EOS() %>
+INSERT INTO Countries VALUES ('SG','Singapore') <%= EOS() %>
+INSERT INTO Countries VALUES ('SK','Slovakia (Slovak Republic)') <%= EOS() %>
+INSERT INTO Countries VALUES ('SI','Slovenia') <%= EOS() %>
+INSERT INTO Countries VALUES ('SB','Solomon Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('SO','Somalia') <%= EOS() %>
+INSERT INTO Countries VALUES ('ZA','South Africa') <%= EOS() %>
+INSERT INTO Countries VALUES ('ES','Spain') <%= EOS() %>
+INSERT INTO Countries VALUES ('LK','Sri Lanka') <%= EOS() %>
+INSERT INTO Countries VALUES ('SH','St. Helena') <%= EOS() %>
+INSERT INTO Countries VALUES ('PM','St. Pierre and Miquelon') <%= EOS() %>
+INSERT INTO Countries VALUES ('SD','Sudan') <%= EOS() %>
+INSERT INTO Countries VALUES ('SR','Suriname') <%= EOS() %>
+INSERT INTO Countries VALUES ('SJ','Svalbard and Jan Mayen Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('SZ','Swaziland') <%= EOS() %>
+INSERT INTO Countries VALUES ('SE','Sweden') <%= EOS() %>
+INSERT INTO Countries VALUES ('CH','Switzerland') <%= EOS() %>
+INSERT INTO Countries VALUES ('SY','Syrian Arab Republic') <%= EOS() %>
+INSERT INTO Countries VALUES ('TW','Taiwan') <%= EOS() %>
+INSERT INTO Countries VALUES ('TJ','Tajikistan') <%= EOS() %>
+INSERT INTO Countries VALUES ('TZ','Tanzania, United Republic of') <%= EOS() %>
+INSERT INTO Countries VALUES ('TH','Thailand') <%= EOS() %>
+INSERT INTO Countries VALUES ('TG','Togo') <%= EOS() %>
+INSERT INTO Countries VALUES ('TK','Tokelau') <%= EOS() %>
+INSERT INTO Countries VALUES ('TO','Tonga') <%= EOS() %>
+INSERT INTO Countries VALUES ('TT','Trinidad and Tobago') <%= EOS() %>
+INSERT INTO Countries VALUES ('TN','Tunisia') <%= EOS() %>
+INSERT INTO Countries VALUES ('TR','Turkey') <%= EOS() %>
+INSERT INTO Countries VALUES ('TM','Turkmenistan') <%= EOS() %>
+INSERT INTO Countries VALUES ('TC','Turks and Caicos Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('TV','Tuvalu') <%= EOS() %>
+INSERT INTO Countries VALUES ('UM','U. S. Minor Outlying Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('UG','Uganda') <%= EOS() %>
+INSERT INTO Countries VALUES ('UA','Ukraine') <%= EOS() %>
+INSERT INTO Countries VALUES ('AE','United Arab Emirates') <%= EOS() %>
+INSERT INTO Countries VALUES ('UK','United Kingdom') <%= EOS() %>
+INSERT INTO Countries VALUES ('UY','Uruguay') <%= EOS() %>
+INSERT INTO Countries VALUES ('UZ','Uzbekistan') <%= EOS() %>
+INSERT INTO Countries VALUES ('VU','Vanuatu') <%= EOS() %>
+INSERT INTO Countries VALUES ('VA','Vatican City State (Holy See)') <%= EOS() %>
+INSERT INTO Countries VALUES ('VE','Venezuela') <%= EOS() %>
+INSERT INTO Countries VALUES ('VN','Viet Nam') <%= EOS() %>
+INSERT INTO Countries VALUES ('VG','Virgin Islands (British)') <%= EOS() %>
+INSERT INTO Countries VALUES ('VI','Virgin Islands (U.S.)') <%= EOS() %>
+INSERT INTO Countries VALUES ('WF','Wallis And Futuna Islands') <%= EOS() %>
+INSERT INTO Countries VALUES ('EH','Western Sahara') <%= EOS() %>
+INSERT INTO Countries VALUES ('YE','Yemen') <%= EOS() %>
+INSERT INTO Countries VALUES ('YU','Yugoslavia') <%= EOS() %>
+INSERT INTO Countries VALUES ('ZR','Zaire') <%= EOS() %>
+INSERT INTO Countries VALUES ('ZM','Zambia') <%= EOS() %>
+INSERT INTO Countries VALUES ('ZW','Zimbabwe') <%= EOS() %>
+
+-- Now that the database has been created, run everything as 'mytestdb'
+
+<% if (DatabaseType == DatabaseTypes.MSSql) { %>
+exec sp_changedbowner 'mytestdb'
+GO
+<% } %>
+<% if (DatabaseType == DatabaseTypes.MySql) { %>
+GRANT ALL PRIVILEGES ON mytestdb.* TO mytestdb@'%' IDENTIFIED BY 'mypassword';
+<% } %>
+
+-- END OF SCRIPT
+<script runat="template">
+public enum DatabaseTypes
+{
+	MSSql,
+	MySql
+}
+
+public string GetIdentity(int initialValue)
+{
+	switch(DatabaseType)
+	{
+		case DatabaseTypes.MSSql:
+		default:
+			return string.Format("IDENTITY({0}, 1)", initialValue);
+		case DatabaseTypes.MySql:
+			return "AUTO_INCREMENT";
+		
+	}
+}
+
+public string GetBlob()
+{
+	switch(DatabaseType)
+	{
+		case DatabaseTypes.MSSql:
+		default:
+			return "varbinary(max)";
+		case DatabaseTypes.MySql:
+			return "LONGBLOB";
+		
+	}
+}
+
+public string EOS()
+{
+	if(DatabaseType == DatabaseTypes.MSSql)
+		return "GO";
+	return ";";
+}
+
+public string DateTimeDefault(string constraintName)
+{
+	if(DatabaseType == DatabaseTypes.MSSql)
+		return string.Format("CONSTRAINT {0} DEFAULT('1970-01-01')", constraintName);
+	return "DEFAULT '1970-01-01'";
+}
+
+public string NameColumn()
+{
+	if(DatabaseType == DatabaseTypes.MSSql)
+		return "[name]";
+	return "name";
+}
+
+</script>

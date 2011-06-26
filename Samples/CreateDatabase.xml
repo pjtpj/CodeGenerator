@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<codeGenerator>
+
+	<defaultTemplate path="CreateDatabase.sqlt" />
+ 
+	<propertySets>
+
+		<propertySet output="GeneratedCode\CreateDatabase-MSSql.sql">
+      <property name="DatabaseType">MSSql</property>
+		</propertySet>
+
+    <propertySet output="GeneratedCode\CreateDatabase-MySql.sql">
+      <property name="DatabaseType">MySql</property>
+    </propertySet>
+
+	</propertySets>
+  
+</codeGenerator>

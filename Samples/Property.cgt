@@ -1,0 +1,17 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="C#" Description="Demonstration of a simple template with properties and a batch file"%>
+<%@ Property Name="Name" Type="System.String" Category="Options" %>
+<%@ Property Name="Type" Type="System.String" Category="Options" %>
+<%@ Property Name="ReadOnly" Type="System.Boolean" Default="true" Category="Options" %>
+<%-- 
+	Run with either of these commands: 
+	
+		CodeGenerator /template:Property.cgt /property:Name=TestPropertyName /property:Type=String /property:ReadOnly=true /debug+ 
+		CodeGenerator /batch:Property.xml
+--%>
+
+public <%=Type%> <%=Name%>
+		{
+			get { return _<%=Name.Substring(0, 1).ToLower() + Name.Substring(1)%>; }<%if (!ReadOnly) {%>
+			set { _<%=Name.Substring(0, 1).ToLower() + Name.Substring(1)%> = value; }<%}%>
+		}
+		

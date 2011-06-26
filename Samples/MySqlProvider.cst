@@ -1,0 +1,42 @@
+<%@ CodeTemplate Language="C#" TargetLanguage="Text" Description="Demonstration of MySqlDatabaseSchema" %>
+<%@ Property Name="SourceDb" Type="DatabaseSchema.Database" Category="Context" Description="Database for schmea" %>
+<%@ Assembly Name="System.Data" %>
+<%@ Import Namespace="DatabaseSchema" %>
+<%@ Import Namespace="System.Data" %>
+<%-- 
+	Run with this command: 
+	
+		CodeGenerator /template:MySqlProvider.cst /properties:MySqlProvider.xml /debug+
+--%>
+
+Database: <%=SourceDb.Name%>
+
+<%
+	foreach(Table table in SourceDb.Tables)
+	{
+%>
+	Table: <%=table.Name%>
+<%
+		int i = 1;
+		foreach(Column column in table.Columns)
+		{
+		
+%>
+			<%=column.Name %> <%=column.NativeType%><%=column.Size>0?"("+column.Size+")":""%>
+<%
+		}
+%>
+		Primary Keys:
+<%
+		PrimaryKey pk = table.PrimaryKey;
+		foreach(Column column in pk.MemberColumns)
+		{
+%>
+			<%=column.Name %> <%= column.IsIdentity ? "(Identity)" : "" %>
+<%
+		}
+%>
+
+<%		
+	}
+%>

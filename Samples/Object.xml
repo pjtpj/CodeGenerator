@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<codeGenerator>
+
+  <propertySets>
+
+    <propertySet template="ObjectBase.cst" output="GeneratedCode\UserBase.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Users</Name>
+      </property>
+		</propertySet>
+    <propertySet template="ObjectBase.cst" output="GeneratedCode\ArticleTypeBase.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>ArticleTypes</Name>
+      </property>
+    </propertySet>
+    <propertySet template="ObjectBase.cst" output="GeneratedCode\ArticleBase.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Articles</Name>
+      </property>
+    </propertySet>
+    <propertySet template="ObjectBase.cst" output="GeneratedCode\CountryBase.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Countries</Name>
+      </property>
+    </propertySet>
+
+    <propertySet template="Object.cst" output="GeneratedCode\User.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Users</Name>
+      </property>
+    </propertySet>
+    <propertySet template="Object.cst" output="GeneratedCode\ArticleType.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>ArticleTypes</Name>
+      </property>
+    </propertySet>
+    <propertySet template="Object.cst" output="GeneratedCode\Article.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Articles</Name>
+      </property>
+    </propertySet>
+    <propertySet template="Object.cst" output="GeneratedCode\Country.cs">
+      <property name="SourceTable">
+        <ConnectionString>Initial Catalog=mytestdb;Data Source=localhost;User ID=mytestdb;Password=mypassword;</ConnectionString>
+        <Name>Countries</Name>
+      </property>
+    </propertySet>
+
+  </propertySets>
+  
+</codeGenerator>
