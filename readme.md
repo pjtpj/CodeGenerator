@@ -1,3 +1,7 @@
+CodeGenerator
+
+=============
+
 CodeGenerator is programmer's command line tool used to generate code. Any type of code or text file can be generated. I use it to generate .cs (C#), .aspx, .sql and other types of files. 
 
 CodeGenerator is similar in concept to the CodeSmith product from http://www.codesmithtools.com/. Two big differences are 1) Source code is included and 2) It's free! 
